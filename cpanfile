@@ -1,3 +1,4 @@
+requires 'Moo'      => '0';
 requires 'Promises' => '0';
 
 on test => sub {

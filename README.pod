@@ -4,11 +4,67 @@
 
 =head1 NAME
 
-Promises::Channel - a thing
+Promises::Channel - a coordination channel implemented with Promises
 
 =head1 VERSION
 
 version 0.01
+
+=head1 SYNOPSIS
+
+  use Promises::Channel;
+
+  my $ch = chan;
+
+  my $soon = $ch->get->then(sub {
+    my $item = shift;
+    do_stuff $item;
+  });
+
+  $ch->put('fnord');
+
+=head1 DESCRIPTION
+
+=head1 METHODS
+
+=head2 size
+
+Returns the number of items in the queue. This number is not adjusted to
+reflect any queued waiters.
+
+=head2 put
+
+Adds one or more items to the channel. Returns the new size of the channel
+after any deferred calls to L</get> are resolved.
+
+=head2 get
+
+Returns a L<Promises::Promise> which will resolve to the next item queued in
+the channel.
+
+=head2 shutdown
+
+Closes the queue. This does not prevent new items from being added. However,
+future calls to L</get> will be resolved immediately with C<undef>. Any
+previously deferred calls to get will be immediately resolved until the channel
+is empty, after which any remaining deferrals will be resolved with C<undef>.
+
+When the channel goes out of scope, it will be shutdown and drained
+automatically.
+
+=head2 is_shutdown
+
+Returns true if the channel has been shutdown.
+
+=head1 EXPORTS
+
+=head2 chan
+
+Sugar for calling the default constructor. The following lines are equivalent.
+
+  my $ch = chan;
+
+  my $ch = Promises::Channel->new;  
 
 =head1 AUTHOR
 
