@@ -3,10 +3,13 @@ package Promises::Channel;
 
 =head1 SYNOPSIS
 
-  use Promises::Channel qw(chan);
+  use Promises::Channel qw(channel);
 
-  my $channel = chan(limit => 4);
+  my $channel = channel
+    limit => 4;
 
+
+  # Use to invert control on an AnyEvent::Handle
   $ae_handle->on_read(sub {
     my $handle = shift;
 
@@ -20,6 +23,8 @@ package Promises::Channel;
     $channel->shutdown;
   });
 
+
+  # See notes about recursion in Promises::Cookbook::Recursion
   sub reader {
     my ($channel, $line) = @_;
     do_stuff $line;
@@ -45,7 +50,10 @@ use Promises qw(deferred);
 
 extends 'Exporter';
 
-our @EXPORT_OK = qw(chan);
+our @EXPORT_OK = qw(
+  channel
+  chan
+);
 
 
 =head1 ATTRIBUTES
@@ -234,19 +242,22 @@ sub DEMOLISH {
 
 =head1 EXPORTS
 
+Nothing is exported by default.
+
 =head2 chan
+
+=head2 channel
 
 Sugar for calling the default constructor. The following lines are equivalent.
 
   my $ch = chan;
-
+  my $ch = channel;
   my $ch = Promises::Channel->new;
 
 =cut
 
-sub chan {
-  Promises::Channel->new(@_);
-}
+sub channel { Promises::Channel->new(@_) }
+sub chan    { Promises::Channel->new(@_) }
 
 =head1 SEE ALSO
 

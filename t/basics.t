@@ -1,8 +1,11 @@
 use Test2::V0;
 use Promises qw(collect);
-use Promises::Channel qw(chan);
+use Promises::Channel qw(channel);
 
-isa_ok my $ch = chan(limit => 5), 'Promises::Channel';
+my $ch = channel
+  limit => 5;
+
+isa_ok $ch, 'Promises::Channel';
 is $ch->size, 0, 'size initially 0';
 ok $ch->is_empty, 'initially empty';
 ok !$ch->is_full, 'not initially full';
