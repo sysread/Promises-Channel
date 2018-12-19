@@ -120,16 +120,6 @@ Sugar for calling the default constructor. The following lines are equivalent.
   my $ch = channel;
   my $ch = Promises::Channel->new;
 
-=head1 SEE ALSO
-
-=over
-
-=item L<Promises>
-
-=item L<Promises::Cookbook::Recursion>
-
-=back
-
 =head1 AUTHOR
 
 Jeff Ober <sysread@fastmail.fm>

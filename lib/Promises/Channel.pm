@@ -259,16 +259,4 @@ Sugar for calling the default constructor. The following lines are equivalent.
 sub channel { Promises::Channel->new(@_) }
 sub chan    { Promises::Channel->new(@_) }
 
-=head1 SEE ALSO
-
-=over
-
-=item L<Promises>
-
-=item L<Promises::Cookbook::Recursion>
-
-=back
-
-=cut
-
 1;
