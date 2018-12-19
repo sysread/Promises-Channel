@@ -42,7 +42,6 @@ use warnings;
 
 use Moo;
 use Promises qw(deferred);
-use Types::Standard -types;
 
 extends 'Exporter';
 
@@ -62,7 +61,6 @@ channel has been L</shutdown>.
 
 has limit =>
   is        => 'ro',
-  isa       => Maybe[Int],
   predicate => 'has_limit';
 
 =head2 is_shutdown
