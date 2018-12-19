@@ -16,6 +16,9 @@ package Promises::Channel;
 
 =head1 DESCRIPTION
 
+A C<Promises::Channel> is a FIFO queue that produces L<Promises::Promise>s
+which resolve to the items added to the queue.
+
 =cut
 
 use strict;
@@ -29,27 +32,29 @@ extends 'Exporter';
 our @EXPORT_OK = qw(chan);
 
 
-has inbox =>
-  is => 'ro',
-  default => sub { [] };
+=head1 ATTRIBUTES
 
-has outbox =>
-  is => 'ro',
-  default => sub { [] };
+=head2 is_shutdown
 
-has is_shutdown =>
-  is => 'ro',
-  default => 0;
-
-
-=head1 METHODS
+Returns true if the channel has been shutdown. The channel will be
+automatically shutdown and drained when demolished.
 
 =cut
 
-sub DEMOLISH {
-  my $self = shift;
-  $self->shutdown;
-}
+has is_shutdown =>
+  is      => 'ro',
+  default => 0;
+
+has inbox =>
+  is      => 'ro',
+  default => sub { [] };
+
+has outbox =>
+  is      => 'ro',
+  default => sub { [] };
+
+
+=head1 METHODS
 
 =head2 size
 
@@ -102,10 +107,6 @@ is empty, after which any remaining deferrals will be resolved with C<undef>.
 When the channel goes out of scope, it will be shutdown and drained
 automatically.
 
-=head2 is_shutdown
-
-Returns true if the channel has been shutdown.
-
 =cut
 
 sub shutdown {
@@ -132,6 +133,12 @@ sub drain {
 
   return;
 }
+
+sub DEMOLISH {
+  my $self = shift;
+  $self->shutdown;
+}
+
 
 =head1 EXPORTS
 
