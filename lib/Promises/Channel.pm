@@ -3,16 +3,32 @@ package Promises::Channel;
 
 =head1 SYNOPSIS
 
-  use Promises::Channel;
+  use Promises::Channel qw(chan);
 
-  my $ch = chan;
+  my $channel = chan(limit => 4);
 
-  my $soon = $ch->get->then(sub {
-    my ($ch, $item) = @_;
-    do_stuff $item;
+  $ae_handle->on_read(sub {
+    my $handle = shift;
+
+    $handle->push_read(line => sub {
+      my ($handle, $line) = @_;
+      $channel->put($line);
+    });
   });
 
-  $ch->put('fnord');
+  $ae_handle->on_error(sub {
+    $channel->shutdown;
+  });
+
+  sub reader {
+    my ($channel, $line) = @_;
+    do_stuff $line;
+
+    # Queue the next read
+    $channel->get->then(\&reader);
+  }
+
+  $channel->get->then(\&reader);
 
 =head1 DESCRIPTION
 
@@ -233,5 +249,17 @@ Sugar for calling the default constructor. The following lines are equivalent.
 sub chan {
   Promises::Channel->new(@_);
 }
+
+=head1 SEE ALSO
+
+=over
+
+=item L<Promises>
+
+=item L<Promises::Cookbook::Recursion>
+
+=back
+
+=cut
 
 1;
