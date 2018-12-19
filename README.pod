@@ -17,7 +17,7 @@ version 0.01
   my $ch = chan;
 
   my $soon = $ch->get->then(sub {
-    my $item = shift;
+    my ($ch, $item) = @_;
     do_stuff $item;
   });
 
@@ -29,6 +29,13 @@ A C<Promises::Channel> is a FIFO queue that produces L<Promises::Promise>s
 which resolve to the items added to the queue.
 
 =head1 ATTRIBUTES
+
+=head2 limit
+
+Sets an upper boundary on the number of items which may be queued at a time. If
+this limit is reached, the promise returned by the next call to L</put> will
+not be resolved until there has been a corresponding call to L</get> (or the
+channel has been L</shutdown>.
 
 =head2 is_shutdown
 
@@ -42,15 +49,31 @@ automatically shutdown and drained when demolished.
 Returns the number of items in the queue. This number is not adjusted to
 reflect any queued waiters.
 
+=head2 is_full
+
+If a L</limit> has been set, returns true if the channel is full and cannot
+immediately accept new items.
+
+=head2 is_empty
+
+Returns true if there are no items in the queue and there are no pending
+deliveries of items from deferred L</put>s.
+
 =head2 put
 
-Adds one or more items to the channel. Returns the new size of the channel
-after any deferred calls to L</get> are resolved.
+Adds one or more items to the channel and returns a L<Promises::Promise> that
+will resolve to the channel instance after the item has been added (which may
+be deferred if L</limit> has been set).
 
 =head2 get
 
-Returns a L<Promises::Promise> which will resolve to the next item queued in
-the channel.
+Returns a L<Promises::Promise> which will resolve to the channel and the next
+item queued in the channel.
+
+  $chan->get->then(sub {
+    my ($chan, $item) = @_;
+    ...
+  });
 
 =head2 shutdown
 
@@ -70,7 +93,7 @@ Sugar for calling the default constructor. The following lines are equivalent.
 
   my $ch = chan;
 
-  my $ch = Promises::Channel->new;  
+  my $ch = Promises::Channel->new;
 
 =head1 AUTHOR
 

@@ -8,7 +8,7 @@ package Promises::Channel;
   my $ch = chan;
 
   my $soon = $ch->get->then(sub {
-    my $item = shift;
+    my ($ch, $item) = @_;
     do_stuff $item;
   });
 
@@ -26,6 +26,7 @@ use warnings;
 
 use Moo;
 use Promises qw(deferred);
+use Types::Standard -types;
 
 extends 'Exporter';
 
@@ -33,6 +34,20 @@ our @EXPORT_OK = qw(chan);
 
 
 =head1 ATTRIBUTES
+
+=head2 limit
+
+Sets an upper boundary on the number of items which may be queued at a time. If
+this limit is reached, the promise returned by the next call to L</put> will
+not be resolved until there has been a corresponding call to L</get> (or the
+channel has been L</shutdown>.
+
+=cut
+
+has limit =>
+  is        => 'ro',
+  isa       => Maybe[Int],
+  predicate => 'has_limit';
 
 =head2 is_shutdown
 
@@ -44,6 +59,10 @@ automatically shutdown and drained when demolished.
 has is_shutdown =>
   is      => 'ro',
   default => 0;
+
+has backlog =>
+  is      => 'ro',
+  default => sub { [] };
 
 has inbox =>
   is      => 'ro',
@@ -68,24 +87,64 @@ sub size {
   scalar @{ $self->inbox };
 }
 
+=head2 is_full
+
+If a L</limit> has been set, returns true if the channel is full and cannot
+immediately accept new items.
+
+=cut
+
+sub is_full {
+  my $self = shift;
+  return $self->has_limit
+      && $self->size == $self->limit;
+}
+
+=head2 is_empty
+
+Returns true if there are no items in the queue and there are no pending
+deliveries of items from deferred L</put>s.
+
+=cut
+
+sub is_empty {
+  my $self = shift;
+  return $self->size == 0
+      && !@{ $self->backlog };
+}
+
 =head2 put
 
-Adds one or more items to the channel. Returns the new size of the channel
-after any deferred calls to L</get> are resolved.
+Adds one or more items to the channel and returns a L<Promises::Promise> that
+will resolve to the channel instance after the item has been added (which may
+be deferred if L</limit> has been set).
 
 =cut
 
 sub put {
-  my $self = shift;
-  push @{ $self->inbox }, @_;
-  $self->drain;
-  $self->size;
+  my ($self, $item) = @_;
+  my $soon = deferred;
+
+  my $promise = $soon->promise->then(sub {
+    my ($self, $item) = @_;
+    $self->drain;
+    return $self;
+  });
+
+  push @{ $self->backlog }, [$item, $soon];
+  $self->pump;
+  $soon->promise;
 }
 
 =head2 get
 
-Returns a L<Promises::Promise> which will resolve to the next item queued in
-the channel.
+Returns a L<Promises::Promise> which will resolve to the channel and the next
+item queued in the channel.
+
+  $chan->get->then(sub {
+    my ($chan, $item) = @_;
+    ...
+  });
 
 =cut
 
@@ -93,8 +152,16 @@ sub get {
   my $self = shift;
   my $soon = deferred;
   push @{ $self->outbox }, $soon;
+
+  my $promise = $soon->promise->then(sub {
+    my ($self, $item) = @_;
+    $self->pump;
+    return ($self, $item);
+  });
+
   $self->drain;
-  $soon->promise;
+
+  return $promise;
 }
 
 =head2 shutdown
@@ -113,6 +180,17 @@ sub shutdown {
   my $self = shift;
   $self->{is_shutdown} = 1;
   $self->drain;
+  $self->pump;
+}
+
+sub pump {
+  my $self = shift;
+
+  while (@{ $self->backlog } && !$self->is_full) {
+    my ($item, $soon) = @{ shift @{ $self->backlog } };
+    push @{ $self->inbox }, $item;
+    $soon->resolve($self->size);
+  }
 }
 
 sub drain {
@@ -121,13 +199,13 @@ sub drain {
   while (@{ $self->inbox } && @{ $self->outbox }) {
     my $soon = shift @{ $self->outbox };
     my $msg  = shift @{ $self->inbox };
-    $soon->resolve($msg);
+    $soon->resolve($self, $msg);
   }
 
   if ($self->is_shutdown) {
     while (@{ $self->outbox }) {
       my $soon = shift @{ $self->outbox };
-      $soon->resolve(undef);
+      $soon->resolve($self, undef);
     }
   }
 
@@ -148,7 +226,7 @@ Sugar for calling the default constructor. The following lines are equivalent.
 
   my $ch = chan;
 
-  my $ch = Promises::Channel->new;  
+  my $ch = Promises::Channel->new;
 
 =cut
 
