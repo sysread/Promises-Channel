@@ -12,13 +12,15 @@ version 0.02
 
 =head1 SYNOPSIS
 
+  # See notes about recursion in Promises::Cookbook::Recursion
+  use Promises backend => ['AE'], 'deferred';
   use Promises::Channel qw(channel);
 
   my $channel = channel
     limit => 4;
 
 
-  # Use to invert control on an AnyEvent::Handle
+  # Use $channel to invert control on an AnyEvent::Handle
   $ae_handle->on_read(sub {
     my $handle = shift;
 
@@ -33,13 +35,12 @@ version 0.02
   });
 
 
-  # See notes about recursion in Promises::Cookbook::Recursion
   sub reader {
     my ($channel, $line) = @_;
     do_stuff $line;
 
-    # Queue the next read
-    $channel->get->then(\&reader);
+    # Queue the next read, using done to avoid recursion
+    $channel->get->done(\&reader);
   }
 
   $channel->get->then(\&reader);
