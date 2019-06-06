@@ -149,7 +149,6 @@ sub put {
   my $soon = deferred;
 
   my $promise = $soon->promise->then(sub {
-    my ($self, $item) = @_;
     $self->drain;
     return $self;
   });
