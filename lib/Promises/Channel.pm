@@ -82,9 +82,12 @@ automatically shutdown and drained when demolished.
 
 =cut
 
-has is_shutdown =>
+has shutdown_signal =>
   is      => 'ro',
-  default => 0;
+  default => sub { deferred },
+  handles => {
+    is_shutdown => 'is_done',
+  };
 
 has backlog =>
   is      => 'ro',
@@ -97,10 +100,6 @@ has inbox =>
 has outbox =>
   is      => 'ro',
   default => sub { [] };
-
-has _on_shutdown =>
-  is      => 'ro',
-  default => sub { deferred };
 
 =head1 METHODS
 
@@ -161,7 +160,7 @@ sub put {
 
   push @{ $self->backlog }, [$item, $soon];
   $self->pump;
-  $soon->promise;
+  return $soon->promise;
 }
 
 =head2 get
@@ -206,11 +205,10 @@ automatically.
 
 sub shutdown {
   my $self = shift;
-  $self->{is_shutdown} = 1;
+  $self->shutdown_signal->resolve
+    unless $self->is_shutdown;
   $self->drain;
   $self->pump;
-  $self->_on_shutdown->resolve
-    unless $self->_on_shutdown->is_done;
 }
 
 =head2 on_shutdown
@@ -223,7 +221,7 @@ be resolved when the channel goes out of scope as well.
 
 sub on_shutdown {
   my $self = shift;
-  return $self->_on_shutdown->promise;
+  return $self->shutdown_signal->promise;
 }
 
 
@@ -247,8 +245,7 @@ sub drain {
   }
 
   if ($self->is_shutdown) {
-    while (@{ $self->outbox }) {
-      my $soon = shift @{ $self->outbox };
+    while (my $soon = shift @{ $self->outbox }) {
       $soon->resolve($self, undef);
     }
   }
