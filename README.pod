@@ -8,7 +8,7 @@ Promises::Channel - a coordination channel implemented with Promises
 
 =head1 VERSION
 
-version 0.02
+version 0.03
 
 =head1 SYNOPSIS
 
@@ -34,6 +34,10 @@ version 0.02
     $channel->shutdown;
   });
 
+  my $depleted = 0;
+  $channel->on_shutdown(sub {
+    $depleted = 1;
+  });
 
   sub reader {
     my ($channel, $line) = @_;
@@ -107,6 +111,12 @@ is empty, after which any remaining deferrals will be resolved with C<undef>.
 When the channel goes out of scope, it will be shutdown and drained
 automatically.
 
+=head2 on_shutdown
+
+Returns a promise which will be resolved after the channel has been shut down
+and drained. As the channel is shut down when demolished, this promise will
+be resolved when the channel goes out of scope as well.
+
 =head1 EXPORTS
 
 Nothing is exported by default.
@@ -120,6 +130,17 @@ Sugar for calling the default constructor. The following lines are equivalent.
   my $ch = chan;
   my $ch = channel;
   my $ch = Promises::Channel->new;
+
+=head1 CONTRIBUTORS
+
+The following people have contributed to this module by supplying new features,
+bug reports, or feature requests.
+
+=over
+
+=item Erik Huelsmann (EHUELS)
+
+=back
 
 =head1 AUTHOR
 

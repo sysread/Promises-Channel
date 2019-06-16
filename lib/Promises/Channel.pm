@@ -27,7 +27,7 @@ package Promises::Channel;
 
   my $depleted = 0;
   $channel->on_shutdown(sub {
-     $depleted = 1;
+    $depleted = 1;
   });
 
   sub reader {
@@ -210,7 +210,8 @@ sub shutdown {
   $self->{is_shutdown} = 1;
   $self->drain;
   $self->pump;
-  $self->_on_shutdown->resolve;
+  $self->_on_shutdown->resolve
+    unless $self->_on_shutdown->is_done;
 }
 
 =head2 on_shutdown
@@ -222,9 +223,8 @@ be resolved when the channel goes out of scope as well.
 =cut
 
 sub on_shutdown {
-    my $self = shift;
-
-    return $self->_on_shutdown->promise;
+  my $self = shift;
+  return $self->_on_shutdown->promise;
 }
 
 
@@ -281,5 +281,18 @@ Sugar for calling the default constructor. The following lines are equivalent.
 
 sub channel { Promises::Channel->new(@_) }
 sub chan    { Promises::Channel->new(@_) }
+
+=head1 CONTRIBUTORS
+
+The following people have contributed to this module by supplying new features,
+bug reports, or feature requests.
+
+=over
+
+=item Erik Huelsmann (EHUELS)
+
+=back
+
+=cut
 
 1;
