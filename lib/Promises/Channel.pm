@@ -25,6 +25,10 @@ package Promises::Channel;
     $channel->shutdown;
   });
 
+  my $depleted = 0;
+  $channel->on_shutdown(sub {
+     $depleted = 1;
+  });
 
   sub reader {
     my ($channel, $line) = @_;
@@ -95,6 +99,9 @@ has outbox =>
   is      => 'ro',
   default => sub { [] };
 
+has _on_shutdown =>
+  is      => 'ro',
+  default => sub { deferred };
 
 =head1 METHODS
 
@@ -203,7 +210,23 @@ sub shutdown {
   $self->{is_shutdown} = 1;
   $self->drain;
   $self->pump;
+  $self->_on_shutdown->resolve;
 }
+
+=head2 on_shutdown
+
+Returns a promise which will be resolved after the channel has been shut down
+and drained. As the channel is shut down when demolished, this promise will
+be resolved when the channel goes out of scope as well.
+
+=cut
+
+sub on_shutdown {
+    my $self = shift;
+
+    return $self->_on_shutdown->promise;
+}
+
 
 sub pump {
   my $self = shift;
