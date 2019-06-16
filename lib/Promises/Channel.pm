@@ -26,9 +26,8 @@ package Promises::Channel;
   });
 
   my $depleted = 0;
-  $channel->on_shutdown(sub {
-    $depleted = 1;
-  });
+  $channel->on_shutdown
+    ->then(sub { $depleted = 1 });
 
   sub reader {
     my ($channel, $line) = @_;
