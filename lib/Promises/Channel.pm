@@ -163,14 +163,14 @@ sub put {
   my ($self, $item) = @_;
   my $soon = deferred;
 
-  my $promise = $soon->promise->then(sub {
+  my $promise = $soon->then(sub {
     $self->drain;
     return $self;
   });
 
   push @{ $self->backlog }, [$item, $soon];
   $self->pump;
-  return $soon->promise;
+  return $promise;
 }
 
 =head2 get
@@ -189,7 +189,7 @@ sub get {
   my $self = shift;
   my $soon = deferred;
 
-  my $promise = $soon->promise->then(sub {
+  my $promise = $soon->then(sub {
     my ($self, $item) = @_;
     $self->pump;
     return ($self, $item);
