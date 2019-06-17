@@ -178,7 +178,6 @@ item queued in the channel.
 sub get {
   my $self = shift;
   my $soon = deferred;
-  push @{ $self->outbox }, $soon;
 
   my $promise = $soon->promise->then(sub {
     my ($self, $item) = @_;
@@ -186,8 +185,8 @@ sub get {
     return ($self, $item);
   });
 
+  push @{ $self->outbox }, $soon;
   $self->drain;
-
   return $promise;
 }
 
