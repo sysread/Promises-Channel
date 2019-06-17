@@ -85,18 +85,28 @@ automatically shutdown and drained when demolished.
 has shutdown_signal =>
   is      => 'ro',
   default => sub { deferred },
-  handles => {
-    is_shutdown => 'is_done',
-  };
+  handles => { is_shutdown => 'is_done' };
 
+#-------------------------------------------------------------------------------
+# Stores pending insertions as a list of tuples in the form of [item, promise].
+# When the inbox is full, this is where callers of put() wait until there is
+# room for their item to be inserted.
+#-------------------------------------------------------------------------------
 has backlog =>
   is      => 'ro',
   default => sub { [] };
 
+#-------------------------------------------------------------------------------
+# Stores inserted items ready for delivery.
+#-------------------------------------------------------------------------------
 has inbox =>
   is      => 'ro',
   default => sub { [] };
 
+#-------------------------------------------------------------------------------
+# Stores a list of promises handed out by get, representing callers that are
+# waiting for items in the queue.
+#-------------------------------------------------------------------------------
 has outbox =>
   is      => 'ro',
   default => sub { [] };
@@ -224,6 +234,9 @@ sub on_shutdown {
 }
 
 
+#-------------------------------------------------------------------------------
+# Clears out waiting backlog of insertions until the queue is full.
+#-------------------------------------------------------------------------------
 sub pump {
   my $self = shift;
 
@@ -234,6 +247,11 @@ sub pump {
   }
 }
 
+#-------------------------------------------------------------------------------
+# Drains the queue (inbox) and resolves waiting watchers' promises (outbox) to
+# the next item in the queue until empty. If shutdown has been called, any
+# further watchers are resolved to undef.
+#-------------------------------------------------------------------------------
 sub drain {
   my $self = shift;
 
@@ -252,6 +270,10 @@ sub drain {
   return;
 }
 
+#-------------------------------------------------------------------------------
+# Automatically shuts down the channel when the instance goes out of scope or
+# is destroyed.
+#-------------------------------------------------------------------------------
 sub DEMOLISH {
   my $self = shift;
   $self->shutdown;
