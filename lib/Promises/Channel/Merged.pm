@@ -146,6 +146,15 @@ A merged channel is a normal channel and may accept inputs from any source in
 addition to the input sources defined. There is no restriction on calling
 C<put> or any other method of L<Promises::Channel> on a merged channel.
 
+=item A note about recursion
+
+Like any code build using promises, loops are implemented with recursion.
+C<Promises::Channel::Merged> takes pains to ensure that it behaves (primarily
+by using L<Promises::Deferred/done> rather than L<Promises::Deferred/then> in
+its read loop), but users should be aware of memory usage and ensure that they
+use an event-based back end as noted in L<Promises::Cookbook::Recursion>.
+
+
 =back
 
 =cut
