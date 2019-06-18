@@ -57,6 +57,7 @@ extends 'Exporter';
 our @EXPORT_OK = qw(
   channel
   chan
+  merge
 );
 
 
@@ -76,7 +77,7 @@ drained sufficiently.
 =cut
 
 has limit =>
-  is        => 'rw',
+  is => 'rw',
   predicate => 'has_limit';
 
 after limit => sub {
@@ -93,7 +94,7 @@ automatically shutdown and drained when demolished.
 =cut
 
 has shutdown_signal =>
-  is      => 'ro',
+  is => 'ro',
   default => sub { deferred },
   handles => { is_shutdown => 'is_done' };
 
@@ -103,14 +104,14 @@ has shutdown_signal =>
 # room for their item to be inserted.
 #-------------------------------------------------------------------------------
 has backlog =>
-  is      => 'ro',
+  is => 'ro',
   default => sub { [] };
 
 #-------------------------------------------------------------------------------
 # Stores inserted items ready for delivery.
 #-------------------------------------------------------------------------------
 has inbox =>
-  is      => 'ro',
+  is => 'ro',
   default => sub { [] };
 
 #-------------------------------------------------------------------------------
@@ -118,7 +119,7 @@ has inbox =>
 # waiting for items in the queue.
 #-------------------------------------------------------------------------------
 has outbox =>
-  is      => 'ro',
+  is => 'ro',
   default => sub { [] };
 
 =head1 METHODS
@@ -285,7 +286,8 @@ sub drain {
 # is destroyed.
 #-------------------------------------------------------------------------------
 sub DEMOLISH {
-  my $self = shift;
+  my ($self, $global_destruction) = @_;
+  return if $global_destruction;
   $self->shutdown;
 }
 
@@ -308,6 +310,15 @@ Sugar for calling the default constructor. The following lines are equivalent.
 
 sub channel { Promises::Channel->new(@_) }
 sub chan    { Promises::Channel->new(@_) }
+
+=head2 merge
+
+=cut
+
+sub merge {
+  require Promises::Channel::Merged;
+  return Promises::Channel::Merged->new(sources => [@_]);
+}
 
 =head1 CONTRIBUTORS
 
