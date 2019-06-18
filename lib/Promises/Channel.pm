@@ -313,6 +313,9 @@ sub chan    { Promises::Channel->new(@_) }
 
 =head2 merge
 
+Creates a new merged channel from the supplied L<Promises::Channel> instances.
+See L<Promises::Channel::Merged> for a detailed explanation.
+
 =cut
 
 sub merge {

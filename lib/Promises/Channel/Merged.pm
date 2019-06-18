@@ -3,9 +3,35 @@ package Promises::Channel::Merged;
 
 =head1 SYNOPSIS
 
-  use Promises::Channel::Merged;
+  use Promises::Channel qw(merge chan);
+
+  my $foos = chan;
+  my $bars = chan;
+  my $chan = merged $foos, $bars;
+
+  $foos->put('foo');
+  $bars->put('bar');
+
+  $chan->get->then(sub {
+    my ($src, $item) = @_;
+    # $src is $foos
+    # $item is 'foo'
+  });
+
+  $chan->get->then(sub {
+    my ($src, $item) = @_;
+    # $src is $bars
+    # $item is 'bar'
+  });
+
+  $chan->shutdown; # both $foos and $bars are now shut down
 
 =head1 DESCRIPTION
+
+A L<Promises::Channel> which merges the output of one or more other
+L<Promises::Channel> objects. The merged channel will continually draw
+items from its source channels; those items are then available via the
+merged channel's own C<get> method.
 
 =cut
 
@@ -35,7 +61,9 @@ has sources =>
 
 =head2 add
 
-Adds a new channel to the set of input sources.
+Adds a new channel to the merged channel's set of input sources. The new
+channel will immediately begin feeding the merged channel, up to channels
+C<limit>.
 
 =cut
 
@@ -96,5 +124,30 @@ sub _loop {
     }
   });
 }
+
+=head1 NOTES AND CAVEATS
+
+=over
+
+=item Input channels may be added to running merged channels
+
+However, an input channel will only be removed once it has been closed by an
+external factor. Even then, it will only be removed once it has been fully
+drained.
+
+=item Input channels do not prevent other callers from using get()
+
+Any items retrieved from an input channel by an outside caller will not be
+available to the merged channel.
+
+=item A merged channel allows new entries using put() from outside sources
+
+A merged channel is a normal channel and may accept inputs from any source in
+addition to the input sources defined. There is no restriction on calling
+C<put> or any other method of L<Promises::Channel> on a merged channel.
+
+=back
+
+=cut
 
 1;
