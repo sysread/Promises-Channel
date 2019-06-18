@@ -69,11 +69,21 @@ this limit is reached, the promise returned by the next call to L</put> will
 not be resolved until there has been a corresponding call to L</get> (or the
 channel has been L</shutdown>.
 
+Note that decreasing the limit does not retroactively apply to items already
+queued, meaning that new callers L</put> will block until the queue has been
+drained sufficiently.
+
 =cut
 
 has limit =>
-  is        => 'ro',
+  is        => 'rw',
   predicate => 'has_limit';
+
+after limit => sub {
+  # When called as setter, pump the queue in case the limit was set to a higher
+  # value and there are now new slots available.
+  $_[0]->pump if @_ > 2;
+};
 
 =head2 is_shutdown
 

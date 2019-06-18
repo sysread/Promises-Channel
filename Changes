@@ -1,4 +1,5 @@
 {{$NEXT}}
+-change: limit attribute is now rw
 
 0.04 2019-06-18
 -bugfix: set version of Promises in cpanfile to minimum supported feature set used by this module

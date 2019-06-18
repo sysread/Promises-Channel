@@ -8,7 +8,7 @@ Promises::Channel - a coordination channel implemented with Promises
 
 =head1 VERSION
 
-version 0.04
+version 0.05
 
 =head1 SYNOPSIS
 
@@ -61,6 +61,10 @@ Sets an upper boundary on the number of items which may be queued at a time. If
 this limit is reached, the promise returned by the next call to L</put> will
 not be resolved until there has been a corresponding call to L</get> (or the
 channel has been L</shutdown>.
+
+Note that decreasing the limit does not retroactively apply to items already
+queued, meaning that new callers L</put> will block until the queue has been
+drained sufficiently.
 
 =head2 is_shutdown
 
